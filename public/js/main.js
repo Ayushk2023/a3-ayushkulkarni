@@ -35,6 +35,13 @@ const submit = async function( event ) {
 const displayData = async function() {
   
   const response = await fetch("/data");
+
+  const contentType = response.headers.get("content-type") || ""
+  if (!contentType.includes("application/json")) {
+    window.location.href = "/login.html"
+    return
+  }
+
   const data = await response.json()
   
   let tasks = document.getElementById("result");
