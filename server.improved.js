@@ -1,7 +1,7 @@
 require('dotenv').config()
 
 const express = require("express")
-const cookie = require("cookie-session")
+const session = require("express-session")
 const passport = require("passport")
 const app = express()
 const port = 3000
@@ -12,15 +12,20 @@ app.use(express.urlencoded({extended:true}))
 app.get("/", (request, response) => {
   response.redirect("/login.html")
 })
+
 app.use(express.static("public"))
 
-app.use(cookie ({
-  name: "session",
-  keys: ["key1", "key2"]
+app.use(session ({  
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false
 }))
 
 app.use(passport.initialize())
 app.use(passport.session())
+
+const authRouter = require('./public/js/auth')
+app.use('/', authRouter)
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.USERNM}:${process.env.PASS}@${process.env.HOST}/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -49,6 +54,7 @@ async function run() {
     console.error(error)
   }
 }
+run();
 
 function requireLogin(request, response, next) {
   if (request.session?.login) {
@@ -58,13 +64,13 @@ function requireLogin(request, response, next) {
   }
 }
 
-app.get("/data", async (request, response) => {
+app.get("/data", requireLogin, async (request, response) => {
   const docs = await collection.find({username: request.session.username}).toArray()
   response.json(docs)
 })
-app.post("/submit", async (request, response) => handlePost(request, response))
-app.delete("/delete/:id", async (request, response) => handleDelete(request, response))
-app.put("/update/:id", async (request, response) => handleUpdate(request, response))
+app.post("/submit", requireLogin, async (request, response) => handlePost(request, response))
+app.delete("/delete/:id", requireLogin, async (request, response) => handleDelete(request, response))
+app.put("/update/:id", requireLogin, async (request, response) => handleUpdate(request, response))
 
 const handlePost = async function( request, response ) {
   const parse = request.body;
@@ -147,12 +153,11 @@ app.get("/logout", (request, response) => {
 })
 
 app.use(function (request, response, next) {
-  if (request.session.login == true) {
+  if (request.session?.login) {
     next()
   } else {
     response.sendFile(__dirname + "/public/login.html")
   }
 })
 
-run()
 app.listen( port, () => console.log(`Server running on port ${port}`))

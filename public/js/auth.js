@@ -1,30 +1,29 @@
-var passport = require('passport');
-var OpenIDConnectStrategy = require('passport-openidconnect');
+const passport = require('passport');
+const OpenIDConnectStrategy = require('passport-openidconnect');
+const express = require('express');
+const qs = require('querystring');
+const router = express.Router();
 
 passport.use(new OpenIDConnectStrategy({
-  issuer: 'https://' + process.env['AUTH0_DOMAIN'] + '/',
-  authorizationURL: 'https://' + process.env['AUTH0_DOMAIN'] + '/authorize',
-  tokenURL: 'https://' + process.env['AUTH0_DOMAIN'] + '/oauth/token',
-  userInfoURL: 'https://' + process.env['AUTH0_DOMAIN'] + '/userinfo',
-  clientID: process.env['AUTH0_CLIENT_ID'],
-  clientSecret: process.env['AUTH0_CLIENT_SECRET'],
+  issuer: `https://${process.env.AUTH0_DOMAIN}/`,
+  authorizationURL: `https://${process.env.AUTH0_DOMAIN}/authorize`,
+  tokenURL: `https://${process.env.AUTH0_DOMAIN}/oauth/token`,
+  userInfoURL: `https://${process.env.AUTH0_DOMAIN}/userinfo`,
+  clientID: process.env.AUTH0_CLIENT_ID,
+  clientSecret: process.env.AUTH0_CLIENT_SECRET,
   callbackURL: 'http://localhost:3000/oauth2/redirect',
-  scope: [ 'profile', 'email' ]
+  scope: ['profile', 'email']
 }, function verify(issuer, profile, cb) {
   return cb(null, profile);
 }));
 
 passport.serializeUser(function(user, cb) {
-      cb(null, user);
-  });
+  cb(null, user);
+});
   
-  passport.deserializeUser(function(user, cb) {
-      return cb(null, user);
-  });
-
-var express = require('express');
-var qs = require('querystring');
-var router = express.Router();
+passport.deserializeUser(function(user, cb) {
+  cb(null, user);
+});
 
 router.get('/login/auth0', passport.authenticate('openidconnect'));
 
