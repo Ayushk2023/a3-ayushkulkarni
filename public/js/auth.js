@@ -11,7 +11,7 @@ passport.use(new OpenIDConnectStrategy({
   userInfoURL: `https://${process.env.AUTH0_DOMAIN}/userinfo`,
   clientID: process.env.AUTH0_CLIENT_ID,
   clientSecret: process.env.AUTH0_CLIENT_SECRET,
-  callbackURL: 'http://localhost:3000/oauth2/redirect',
+  callbackURL: `${process.env.BASE_URL}/oauth2/redirect`,
   scope: ['profile', 'email']
 }, function verify(issuer, profile, cb) {
   return cb(null, profile);
