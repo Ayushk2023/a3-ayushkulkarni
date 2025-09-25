@@ -47,6 +47,8 @@ async function run() {
     await client.connect();
     collection = client.db("ToDoList").collection("a3-ayushkulkarni");
     usersCollection = client.db("ToDoList").collection("Users");
+    app.locals.collection = collection
+    app.locals.usersCollection = usersCollection
     // Send a ping to confirm a successful connection
     await client.db("ToDoList").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -137,6 +139,8 @@ app.post("/login", async (request, response) => {
   if (!user) {
     const result = await usersCollection.insertOne({username, password})
     user = {_id: result.insertedId, username, password}
+    request.session.username = username
+    request.session.login = true
     return response.send(`<script>alert("Account created for user ${username}"); window.location="/index.html";</script>`);
   } else if (user.password !== password) {
     return response.send(`<script>alert("Incorrect password for user ${username}"); window.location="/login.html";</script>`);
@@ -148,8 +152,12 @@ app.post("/login", async (request, response) => {
 })
 
 app.get("/logout", (request, response) => {
-  request.session = null
-  response.redirect("/login.html")
+  request.session.destroy(err => {
+    if (err) {
+      console.error("Logout Error", err)
+    }
+    response.redirect("/login.html")
+  })
 })
 
 app.use(function (request, response, next) {
